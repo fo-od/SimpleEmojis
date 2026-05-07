@@ -1,11 +1,14 @@
 package com.tommustbe12.simpleEmojis;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-public class AddEmojiCommand implements CommandExecutor {
+import java.util.Collection;
+import java.util.Collections;
+
+public class AddEmojiCommand implements BasicCommand {
 
     private final SimpleEmojis plugin;
 
@@ -18,27 +21,34 @@ public class AddEmojiCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("simpleemojis.add")) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "You don't have permission.");
-            return true;
-        }
-
+    public void execute(@NonNull CommandSourceStack source, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "Usage: /addemoji <placeholder> <emoji>");
-            return true;
+            source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<red>Usage: /addemoji <placeholder> <emoji>");
+            return;
         }
 
         String key = args[0];
         String emoji = args[1];
 
         if (!isEmoji(emoji)) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "Second argument must be a single emoji character.");
-            return true;
+            source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<red>Second argument must be a single emoji character.");
+            return;
         }
 
         plugin.addEmoji(key, emoji);
-        sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.GREEN + "Added emoji: " + key + " -> " + emoji);
-        return true;
+        source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<green>Added emoji: " + key + " -> " + emoji);
+    }
+
+    @Override
+    public @NonNull Collection<String> suggest(@NonNull CommandSourceStack source, String @NonNull [] args) {
+        if (args.length == 1) return Collections.singletonList(":example:");
+        if (args.length == 2) return Collections.singletonList("😀");
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public @Nullable String permission() {
+        return "simpleemojis.add";
     }
 }

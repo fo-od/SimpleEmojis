@@ -1,11 +1,13 @@
 package com.tommustbe12.simpleEmojis;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-public class RemoveEmojiCommand implements CommandExecutor {
+import java.util.*;
+
+public class RemoveEmojiCommand implements BasicCommand {
 
     private final SimpleEmojis plugin;
 
@@ -14,28 +16,45 @@ public class RemoveEmojiCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("simpleemojis.remove")) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "You don't have permission.");
-            return true;
-        }
-
+    public void execute(@NonNull CommandSourceStack source, String[] args) {
         if (args.length < 1) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "Usage: /removeemoji <placeholder>");
-            return true;
+            source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<red>Usage: /removeemoji <placeholder>");
+            return;
         }
 
         String key = args[0];
         if (!plugin.getEmojiMap().containsKey(key)) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "Emoji placeholder not found.");
-            return true;
+            source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<red>Emoji placeholder not found.");
+            return;
         }
 
         plugin.getEmojiMap().remove(key);
         plugin.getConfig().set("emojis." + key, null);
         plugin.saveConfig();
 
-        sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.YELLOW + "Removed emoji: " + key);
-        return true;
+        source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<yellow>Removed emoji: " + key);
+    }
+
+    @Override
+    public @NonNull Collection<String> suggest(@NonNull CommandSourceStack source, String @NonNull [] args) {
+        if (args.length == 1) {
+            String typed = args[0].toLowerCase();
+            List<String> suggestions = new ArrayList<>();
+            for (Map.Entry<String, String> entry : plugin.getEmojiMap().entrySet()) {
+                String key = entry.getKey();
+                String emoji = entry.getValue();
+                if (key.toLowerCase().startsWith(typed)) {
+                    suggestions.add(key + " → " + emoji); // visual suggestion
+                }
+            }
+            return suggestions;
+        }
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public @Nullable String permission() {
+        return "simpleemojis.remove";
     }
 }

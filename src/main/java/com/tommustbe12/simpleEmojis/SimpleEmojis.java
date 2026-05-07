@@ -1,14 +1,16 @@
 package com.tommustbe12.simpleEmojis;
 
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.api.Subscribe;
+import github.scarsz.discordsrv.api.events.DiscordGuildMessagePostProcessEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
@@ -16,39 +18,26 @@ import java.util.Map;
 
 public final class SimpleEmojis extends JavaPlugin implements Listener {
 
-    private static final String PREFIX = ChatColor.GRAY + "[" + ChatColor.WHITE + "Simple" + ChatColor.YELLOW + "Emojis" + ChatColor.GRAY + "] ";
+    private static final String PREFIX = "<gray>[<white>Simple<yellow>Emojis<gray>]</gray> ";
     private final Map<String, String> emojiMap = new HashMap<>();
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         loadEmojiMap();
+        DiscordSRV.api.subscribe(this);
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        PluginCommand mainCmd = getCommand("simpleemojis");
-        if (mainCmd != null) {
-            mainCmd.setExecutor(new SimpleEmojiCommand(this));
-            mainCmd.setTabCompleter(new SimpleEmojiTabCompleter(this));
-        }
-
-        PluginCommand addCmd = getCommand("addemoji");
-        if (addCmd != null) {
-            addCmd.setExecutor(new AddEmojiCommand(this));
-            addCmd.setTabCompleter(new SimpleEmojiTabCompleter(this));
-        }
-
-        PluginCommand removeCmd = getCommand("removeemoji");
-        if (removeCmd != null) {
-            removeCmd.setExecutor(new RemoveEmojiCommand(this));
-            removeCmd.setTabCompleter(new SimpleEmojiTabCompleter(this));
-        }
+        registerCommand("simpleemojis", new SimpleEmojiCommand(this));
+        registerCommand("addemoji", new AddEmojiCommand(this));
+        registerCommand("removeemoji", new RemoveEmojiCommand(this));
 
         getLogger().info("§fSimple§eEmojis §fEnabled!");
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        DiscordSRV.api.unsubscribe(this);
     }
 
     public void loadEmojiMap() {
@@ -81,13 +70,24 @@ public final class SimpleEmojis extends JavaPlugin implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onChat(AsyncPlayerChatEvent event) {
-        String rawMessage = event.getMessage();
+    public void onChat(AsyncChatEvent event) {
+        Component newMessage = event.message();
 
         for (Map.Entry<String, String> entry : this.getEmojiMap().entrySet()) {
-            rawMessage = rawMessage.replace(entry.getKey(), entry.getValue());
+            newMessage = newMessage.replaceText(TextReplacementConfig.builder().matchLiteral(entry.getKey()).replacement(entry.getValue()).build());
         }
 
-        event.setMessage(rawMessage);
+        event.message(newMessage);
+    }
+
+    @Subscribe
+    public void onDiscordMessage(DiscordGuildMessagePostProcessEvent event) {
+        github.scarsz.discordsrv.dependencies.kyori.adventure.text.Component newMessage = event.getMinecraftMessage();
+
+        for (Map.Entry<String, String> entry : this.getEmojiMap().entrySet()) {
+            newMessage = newMessage.replaceText(github.scarsz.discordsrv.dependencies.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral(entry.getKey()).replacement(entry.getValue()).build());
+        }
+
+        event.setMinecraftMessage(newMessage);
     }
 }

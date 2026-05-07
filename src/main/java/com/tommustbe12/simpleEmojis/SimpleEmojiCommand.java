@@ -1,11 +1,14 @@
 package com.tommustbe12.simpleEmojis;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.jspecify.annotations.NonNull;
 
-public class SimpleEmojiCommand implements CommandExecutor {
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+public class SimpleEmojiCommand implements BasicCommand {
 
     private final SimpleEmojis plugin;
 
@@ -14,38 +17,44 @@ public class SimpleEmojiCommand implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public void execute(@NonNull CommandSourceStack source, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "Usage: /simpleemojis <list|reload>");
-            return true;
+            source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<red>Usage: /simpleemojis <list|reload>");
+            return;
         }
 
         switch (args[0].toLowerCase()) {
             case "list":
-                sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.YELLOW + "Current Emojis:");
-                sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.GRAY + "These can be used by typing the placeholder in chat.");
+                source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<yellow>Current Emojis:");
+                source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<gray>These can be used by typing the placeholder in chat.");
                 plugin.getEmojiMap().forEach((key, emoji) ->
-                        sender.sendMessage(ChatColor.GRAY + "  " + key + " -> " + emoji));
+                        source.getSender().sendRichMessage("<gray>  " + key + " -> " + emoji ));
                 break;
 
             case "reload":
                 plugin.reloadConfig();
                 plugin.loadEmojiMap();
-                sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.GREEN + "Config reloaded.");
+                source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<green>Config reloaded.");
                 break;
 
             case "help":
-                sender.sendMessage("§eSimpleEmojis Help:");
-                sender.sendMessage("§6/simpleemojis list §7- Lists all emojis");
-                sender.sendMessage("§6/simpleemojis reload §7- Reloads the emoji configuration");
-                sender.sendMessage("§6/simpleemojis help §7- Shows this help message");
-                sender.sendMessage("§6/addemoji <placeholder> <emoji> §7- Add a new emoji with placeholder (e.g. :heart:) and emoji (e.g. ❤) to the config.");
-                sender.sendMessage("§6/removeemoji <placeholder> §7- Choose an emoji from the config to remove.");
+                source.getSender().sendRichMessage("<yellow>SimpleEmojis Help:");
+                source.getSender().sendRichMessage("<gold>/simpleemojis list <gray>- Lists all emojis");
+                source.getSender().sendRichMessage("<gold>/simpleemojis reload <gray>- Reloads the emoji configuration");
+                source.getSender().sendRichMessage("<gold>/simpleemojis help <gray>- Shows this help message");
+                source.getSender().sendRichMessage("<gold>/addemoji <placeholder> <emoji> <gray>- Add a new emoji with placeholder (e.g. :heart:) and emoji (e.g. ❤) to the config.");
+                source.getSender().sendRichMessage("<gold>/removeemoji <placeholder> <gray>- Choose an emoji from the config to remove.");
                 break;
 
             default:
-                sender.sendMessage(SimpleEmojis.getPrefix() + ChatColor.RED + "Unknown subcommand.");
+                source.getSender().sendRichMessage(SimpleEmojis.getPrefix() + "<red>Unknown subcommand.");
         }
-        return true;
+    }
+
+    @Override
+    public @NonNull Collection<String> suggest(@NonNull CommandSourceStack source, String @NonNull [] args) {
+        if (args.length == 1) return Arrays.asList("list", "reload", "help");
+
+        return Collections.emptyList();
     }
 }
