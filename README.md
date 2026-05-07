@@ -1,1 +1,1 @@
-This fork of SimpleEmojis hooks into DiscordSRV, letting you see your emojis in recieved messages from discord!
+This fork of SimpleEmojis hooks into DiscordSRV, letting you see your emojis in recieved messages from discord! It also updates things, replacing Bukkit's deprecated/obsolete APIs with Paper's APIs instead.
